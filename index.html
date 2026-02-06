@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Medicine Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #1a6bb3;
+            --secondary-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+        
+        .card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #155a92;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            border: none;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border: none;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .medicine-low {
+            background-color: #fff3cd !important;
+        }
+        
+        .medicine-out {
+            background-color: #f8d7da !important;
+        }
+        
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .status-available { background-color: var(--success-color); }
+        .status-low { background-color: var(--warning-color); }
+        .status-out { background-color: var(--danger-color); }
+        
+        .dashboard-card {
+            transition: transform 0.3s;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 12px;
+            color: #6c757d;
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            font-weight: 500;
+        }
+        
+        .data-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-status i {
+            font-size: 14px;
+        }
+        
+        .data-status.saved {
+            color: var(--success-color);
+            border-left: 3px solid var(--success-color);
+        }
+        
+        .data-status.saving {
+            color: var(--warning-color);
+            border-left: 3px solid var(--warning-color);
+        }
+        
+        .data-status.error {
+            color: var(--danger-color);
+            border-left: 3px solid var(--danger-color);
+        }
+        
+        /* Sales specific styles */
+        .sale-item-row {
+            transition: background-color 0.2s;
+        }
+        
+        .sale-item-row:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .sale-summary {
+            background-color: #e8f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        #receiptContent {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .receipt-header {
+            text-align: center;
+            border-bottom: 2px dashed #ccc;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .receipt-total {
+            border-top: 2px solid #333;
+            padding-top: 10px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        
+        .print-only {
+            display: none;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #receiptContent, #receiptContent * {
+                visibility: visible;
+            }
+            #receiptContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+            }
+            .print-only {
+                display: block;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-pills me-2"></i>Hospital Medicine Management
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#addMedicineModal">
+                            <i class="fas fa-plus-circle me-1"></i> Add Medicine
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="saleMedicineBtn">
+                            <i class="fas fa-shopping-cart me-1"></i> Make Sale
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="checkMissingBtn">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Check Missing
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="backupDataBtn">
+                            <i class="fas fa-download me-1"></i> Backup
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Dashboard Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Total Medicines</h6>
+                                <h3 id="totalMedicines">0</h3>
+                            </div>
+                            <div class="bg-primary p-3 rounded-circle">
+                                <i class="fas fa-pills fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Today's Sales</h6>
+                                <h3 id="todaySales">PKR 0</h3>
+                            </div>
+                            <div class="bg-success p-3 rounded-circle">
+                                <i class="fas fa-rupee-sign fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Low Stock</h6>
+                                <h3 id="lowStockMedicines">0</h3>
+                            </div>
+                            <div class="bg-warning p-3 rounded-circle">
+                                <i class="fas fa-exclamation-triangle fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted">Out of Stock</h6>
+                                <h3 id="outOfStockMedicines">0</h3>
+                            </div>
+                            <div class="bg-danger p-3 rounded-circle">
+                                <i class="fas fa-times-circle fa-2x text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" id="searchMedicine" placeholder="Search medicines by name, category, or manufacturer...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="filterStatus">
+                    <option value="all">All Medicines</option>
+                    <option value="available">Available</option>
+                    <option value="low">Low Stock</option>
+                    <option value="out">Out of Stock</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Medicine Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-capsules me-2"></i>Medicine Inventory</h5>
+                <div>
+                    <button class="btn btn-sm btn-success me-2" id="saleMedicineBtn2">
+                        <i class="fas fa-cart-plus me-1"></i> Make Sale
+                    </button>
+                    <button class="btn btn-sm btn-light me-2" id="exportBtn">
+                        <i class="fas fa-file-export me-1"></i> Export
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="medicineTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Medicine Name</th>
+                                <th>Category</th>
+                                <th>Manufacturer</th>
+                                <th>Stock</th>
+                                <th>Price (PKR)</th>
+                                <th>Expiry Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medicineTableBody">
+                            <!-- Medicine data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3" id="noResults" style="display: none;">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5>No medicines found</h5>
+                    <p class="text-muted">Try adjusting your search or filter</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Status Indicator -->
+    <div class="data-status" id="dataStatus" style="display: none;">
+        <i class="fas fa-circle"></i>
+        <span>Data saved successfully</span>
+    </div>
+
+    <!-- Add Medicine Modal -->
+    <div class="modal fade" id="addMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Medicine</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addMedicineForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Medicine Name *</label>
+                                <input type="text" class="form-control" id="medicineName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category *</label>
+                                <select class="form-select" id="medicineCategory" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Antibiotic">Antibiotic</option>
+                                    <option value="Analgesic">Analgesic (Pain Relief)</option>
+                                    <option value="Antihypertensive">Antihypertensive</option>
+                                    <option value="Antidiabetic">Antidiabetic</option>
+                                    <option value="Antidepressant">Antidepressant</option>
+                                    <option value="Antiviral">Antiviral</option>
+                                    <option value="Antifungal">Antifungal</option>
+                                    <option value="Gastrointestinal">Gastrointestinal</option>
+                                    <option value="Cardiovascular">Cardiovascular</option>
+                                    <option value="Respiratory">Respiratory</option>
+                                    <option value="Vitamin">Vitamin & Supplement</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Manufacturer *</label>
+                                <input type="text" class="form-control" id="medicineManufacturer" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (PKR) *</label>
+                                <input type="number" class="form-control" id="medicinePrice" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Current Stock *</label>
+                                <input type="number" class="form-control" id="medicineStock" min="0" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Minimum Stock Level *</label>
+                                <input type="number" class="form-control" id="medicineMinStock" min="1" value="10" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Expiry Date *</label>
+                                <input type="date" class="form-control" id="medicineExpiry" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Batch Number</label>
+                                <input type="text" class="form-control" id="medicineBatch">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="medicineDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveMedicineBtn">Save Medicine</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Make Sale Modal -->
+    <div class="modal fade" id="saleMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Make Sale</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Medicine Selection -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Select Medicine</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="search-box mb-3">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" class="form-control" id="saleSearchMedicine" placeholder="Search medicine to add...">
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                        <table class="table table-sm table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Stock</th>
+                                                    <th>Price</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="saleMedicineList">
+                                                <!-- Sale medicine list will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Selected Medicines -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Current Sale Items</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Medicine</th>
+                                                    <th>Qty</th>
+                                                    <th>Price</th>
+                                                    <th>Total</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="currentSaleItems">
+                                                <!-- Current sale items will be shown here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="sale-summary">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-2">
+                                                    <strong>Total Items:</strong> <span id="totalSaleItems">0</span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    <strong>Subtotal:</strong> PKR<span id="saleSubtotal">0.00</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Discount (PKR)</label>
+                                                    <input type="number" class="form-control" id="saleDiscount" min="0" value="0">
+                                                </div>
+                                                <div>
+                                                    <h5>Grand Total: PKR<span id="saleGrandTotal">0.00</span></h5>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Receipt Preview -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Receipt Preview</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="receiptContent">
+                                        <div class="receipt-header">
+                                            <h4>Hospital Pharmacy</h4>
+                                            <p class="mb-0">Medicine Sales Receipt</p>
+                                            <small id="receiptDateTime"></small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <div class="receipt-item">
+                                                <span>Receipt No:</span>
+                                                <span id="receiptNumber">001</span>
+                                            </div>
+                                            <div class="receipt-item">
+                                                <span>Date:</span>
+                                                <span id="receiptDate"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <h6>Items:</h6>
+                                            <div id="receiptItems">
+                                                <!-- Receipt items will be shown here -->
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="receipt-total">
+                                            <div class="receipt-item">
+                                                <span>Subtotal:</span>
+                                                <span>PKR<span id="receiptSubtotal">0.00</span></span>
+                                            </div>
+                                            <div class="receipt-item">
+                                                <span>Discount:</span>
+                                                <span>PKR<span id="receiptDiscount">0.00</span></span>
+                                            </div>
+                                            <div class="receipt-item">
+                                                <strong>Grand Total:</strong>
+                                                <strong>PKR<span id="receiptGrandTotal">0.00</span></strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="text-center mt-4 print-only">
+                                            <p>Thank you for your purchase!</p>
+                                            <p>For any queries, contact: 0301-3363832</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3 text-center">
+                                        <button class="btn btn-primary" id="completeSaleBtn">
+                                            <i class="fas fa-check-circle me-1"></i> Complete Sale
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="window.print()">
+                                            <i class="fas fa-print me-1"></i> Print Receipt
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Medicine Modal -->
+    <div class="modal fade" id="editMedicineModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Medicine</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="editMedicineModalBody">
+                    <!-- Edit form will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Constants for localStorage keys
+        const STORAGE_KEY = 'hospital_medicines_data';
+        const SALES_KEY = 'hospital_sales_data';
+        
+        // Global variables
+        let medicines = [];
+        let sales = [];
+        let currentSaleItems = [];
+        let saleReceiptNumber = 1;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load data from localStorage
+            loadDataFromStorage();
+            
+            // If no data in storage, load sample data
+            if (medicines.length === 0) {
+                loadSampleData();
+                saveDataToStorage();
+            }
+            
+            // Load sales data
+            loadSalesData();
+            
+            renderMedicineTable();
+            updateDashboard();
+            
+            // Add event listeners
+            document.getElementById('saveMedicineBtn').addEventListener('click', addNewMedicine);
+            document.getElementById('searchMedicine').addEventListener('input', filterMedicines);
+            document.getElementById('filterStatus').addEventListener('change', filterMedicines);
+            document.getElementById('checkMissingBtn').addEventListener('click', checkMissingMedicines);
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            document.getElementById('backupDataBtn').addEventListener('click', backupData);
+            document.getElementById('saleMedicineBtn').addEventListener('click', showSaleModal);
+            document.getElementById('saleMedicineBtn2').addEventListener('click', showSaleModal);
+            document.getElementById('saleSearchMedicine').addEventListener('input', filterSaleMedicines);
+            document.getElementById('saleDiscount').addEventListener('input', updateSaleTotal);
+            document.getElementById('completeSaleBtn').addEventListener('click', completeSale);
+            
+            // Set expiry date to tomorrow by default
+            let tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('medicineExpiry').valueAsDate = tomorrow;
+            
+            // Update receipt number
+            updateReceiptNumber();
+            
+            // Show last saved time
+            updateLastSavedTime();
+            
+            // Auto-save indicator
+            showDataStatus('Data loaded from storage', 'saved');
+        });
+
+        // Function to load sample data
+        function loadSampleData() {
+            medicines = [
+                { id: 1, name: "Paracetamol", category: "Analgesic", manufacturer: "Cipla", stock: 150, minStock: 20, price: 25.50, expiry: "2025-06-30", batch: "PC2024A", description: "Pain relief and fever reducer" },
+                { id: 2, name: "Amoxicillin", category: "Antibiotic", manufacturer: "Sun Pharma", stock: 45, minStock: 30, price: 120.75, expiry: "2024-11-15", batch: "AM2024B", description: "Broad-spectrum antibiotic" },
+                { id: 3, name: "Metformin", category: "Antidiabetic", manufacturer: "Dr. Reddy's", stock: 8, minStock: 15, price: 85.25, expiry: "2025-03-20", batch: "MF2024C", description: "Type 2 diabetes medication" },
+                { id: 4, name: "Atorvastatin", category: "Cardiovascular", manufacturer: "Lupin", stock: 0, minStock: 25, price: 150.00, expiry: "2024-09-10", batch: "AT2024D", description: "Cholesterol lowering drug" },
+                { id: 5, name: "Omeprazole", category: "Gastrointestinal", manufacturer: "Zydus", stock: 32, minStock: 20, price: 95.50, expiry: "2025-12-31", batch: "OM2024E", description: "Acid reflux medication" },
+                { id: 6, name: "Cetirizine", category: "Other", manufacturer: "Mankind", stock: 120, minStock: 30, price: 35.75, expiry: "2024-10-05", batch: "CT2024F", description: "Antihistamine for allergies" },
+                { id: 7, name: "Vitamin C", category: "Vitamin", manufacturer: "Himalaya", stock: 200, minStock: 50, price: 45.00, expiry: "2025-08-15", batch: "VC2024G", description: "Vitamin C supplement" },
+                { id: 8, name: "Ibuprofen", category: "Analgesic", manufacturer: "GSK", stock: 12, minStock: 25, price: 65.25, expiry: "2024-12-01", batch: "IB2024H", description: "Anti-inflammatory pain relief" }
+            ];
+        }
+
+        // Function to load data from localStorage
+        function loadDataFromStorage() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    medicines = JSON.parse(savedData);
+                    console.log('Data loaded from localStorage:', medicines.length, 'medicines');
+                }
+            } catch (error) {
+                console.error('Error loading data from storage:', error);
+                showDataStatus('Error loading saved data', 'error');
+            }
+        }
+
+        // Function to load sales data from localStorage
+        function loadSalesData() {
+            try {
+                const savedSales = localStorage.getItem(SALES_KEY);
+                if (savedSales) {
+                    sales = JSON.parse(savedSales);
+                    console.log('Sales data loaded:', sales.length, 'sales');
+                    
+                    // Update receipt number
+                    if (sales.length > 0) {
+                        saleReceiptNumber = Math.max(...sales.map(s => s.receiptNumber)) + 1;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading sales data:', error);
+            }
+        }
+
+        // Function to save data to localStorage
+        function saveDataToStorage() {
+            try {
+                // Show saving indicator
+                showDataStatus('Saving data...', 'saving');
+                
+                // Save medicines data
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(medicines));
+                
+                // Save sales data
+                localStorage.setItem(SALES_KEY, JSON.stringify(sales));
+                
+                // Update last saved time
+                updateLastSavedTime();
+                
+                // Show success message
+                setTimeout(() => {
+                    showDataStatus('Data saved successfully', 'saved');
+                }, 500);
+                
+                console.log('Data saved to localStorage');
+            } catch (error) {
+                console.error('Error saving data to storage:', error);
+                showDataStatus('Error saving data', 'error');
+            }
+        }
+
+        // Function to show data status
+        function showDataStatus(message, status) {
+            const statusDiv = document.getElementById('dataStatus');
+            statusDiv.innerHTML = `<i class="fas fa-circle"></i> <span>${message}</span>`;
+            statusDiv.className = `data-status ${status}`;
+            statusDiv.style.display = 'flex';
+            
+            // Hide after 3 seconds for success/error messages
+            if (status !== 'saving') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Function to update last saved time
+        function updateLastSavedTime() {
+            try {
+                const lastSaved = new Date().toLocaleTimeString();
+                document.getElementById('dataStatus').setAttribute('title', `Last saved: ${lastSaved}`);
+            } catch (error) {
+                console.error('Error updating last saved time:', error);
+            }
+        }
+
+        // Function to update receipt number
+        function updateReceiptNumber() {
+            document.getElementById('receiptNumber').textContent = saleReceiptNumber.toString().padStart(3, '0');
+        }
+
+        // Function to render medicine table
+        function renderMedicineTable(filteredMedicines = null) {
+            const tableBody = document.getElementById('medicineTableBody');
+            const data = filteredMedicines || medicines;
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = '';
+                document.getElementById('noResults').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('noResults').style.display = 'none';
+            
+            let tableHTML = '';
+            data.forEach(medicine => {
+                const status = getMedicineStatus(medicine);
+                const statusClass = status === 'Available' ? 'success' : 
+                                   status === 'Low Stock' ? 'warning' : 'danger';
+                const rowClass = status === 'Low Stock' ? 'medicine-low' : 
+                                status === 'Out of Stock' ? 'medicine-out' : '';
+                
+                tableHTML += `
+                    <tr class="${rowClass}" data-id="${medicine.id}">
+                        <td>${medicine.id}</td>
+                        <td><strong>${medicine.name}</strong></td>
+                        <td><span class="badge bg-secondary">${medicine.category}</span></td>
+                        <td>${medicine.manufacturer}</td>
+                        <td>${medicine.stock}</td>
+                        <td>₹${medicine.price.toFixed(2)}</td>
+                        <td>${formatDate(medicine.expiry)}</td>
+                        <td>
+                            <span class="status-dot status-${statusClass}"></span>
+                            <span class="text-${statusClass}">${status}</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${medicine.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success sale-btn" data-id="${medicine.id}">
+                                <i class="fas fa-cart-plus"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = tableHTML;
+            
+            // Add event listeners to edit and sale buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    editMedicine(id);
+                });
+            });
+            
+            document.querySelectorAll('.sale-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    addMedicineToSale(id);
+                });
+            });
+        }
+
+        // Function to get medicine status
+        function getMedicineStatus(medicine) {
+            if (medicine.stock === 0) return 'Out of Stock';
+            if (medicine.stock <= medicine.minStock) return 'Low Stock';
+            return 'Available';
+        }
+
+        // Function to format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        // Function to update dashboard counts
+        function updateDashboard() {
+            const total = medicines.length;
+            let available = 0, low = 0, out = 0;
+            
+            medicines.forEach(medicine => {
+                const status = getMedicineStatus(medicine);
+                if (status === 'Available') available++;
+                else if (status === 'Low Stock') low++;
+                else if (status === 'Out of Stock') out++;
+            });
+            
+            // Calculate today's sales
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales
+                .filter(sale => sale.date === today)
+                .reduce((sum, sale) => sum + sale.totalAmount, 0);
+            
+            document.getElementById('totalMedicines').textContent = total;
+            document.getElementById('todaySales').textContent = `₹${todaySales.toFixed(2)}`;
+            document.getElementById('lowStockMedicines').textContent = low;
+            document.getElementById('outOfStockMedicines').textContent = out;
+        }
+
+        // Function to add new medicine
+        function addNewMedicine() {
+            const name = document.getElementById('medicineName').value;
+            const category = document.getElementById('medicineCategory').value;
+            const manufacturer = document.getElementById('medicineManufacturer').value;
+            const price = parseFloat(document.getElementById('medicinePrice').value);
+            const stock = parseInt(document.getElementById('medicineStock').value);
+            const minStock = parseInt(document.getElementById('medicineMinStock').value);
+            const expiry = document.getElementById('medicineExpiry').value;
+            const batch = document.getElementById('medicineBatch').value;
+            const description = document.getElementById('medicineDescription').value;
+            
+            // Validation
+            if (!name || !category || !manufacturer || !price || !stock || !minStock || !expiry) {
+                alert('Please fill all required fields');
+                return;
+            }
+            
+            // Generate new ID
+            const newId = medicines.length > 0 ? Math.max(...medicines.map(m => m.id)) + 1 : 1;
+            
+            // Add new medicine
+            medicines.push({
+                id: newId,
+                name,
+                category,
+                manufacturer,
+                stock,
+                minStock,
+                price,
+                expiry,
+                batch,
+                description
+            });
+            
+            // Close modal and reset form
+            document.getElementById('addMedicineForm').reset();
+            bootstrap.Modal.getInstance(document.getElementById('addMedicineModal')).hide();
+            
+            // Update UI
+            renderMedicineTable();
+            updateDashboard();
+            
+            // Save to storage
+            saveDataToStorage();
+            
+            // Show success message
+            showAlert('Medicine added successfully!', 'success');
+        }
+
+        // Function to edit medicine
+        function editMedicine(id) {
+            const medicine = medicines.find(m => m.id === id);
+            if (!medicine) return;
+            
+            const modalBody = document.getElementById('editMedicineModalBody');
+            modalBody.innerHTML = `
+                <form id="editMedicineForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Medicine Name *</label>
+                            <input type="text" class="form-control" id="editMedicineName" value="${medicine.name}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category *</label>
+                            <select class="form-select" id="editMedicineCategory" required>
+                                <option value="Antibiotic" ${medicine.category === 'Antibiotic' ? 'selected' : ''}>Antibiotic</option>
+                                <option value="Analgesic" ${medicine.category === 'Analgesic' ? 'selected' : ''}>Analgesic (Pain Relief)</option>
+                                <option value="Antihypertensive" ${medicine.category === 'Antihypertensive' ? 'selected' : ''}>Antihypertensive</option>
+                                <option value="Antidiabetic" ${medicine.category === 'Antidiabetic' ? 'selected' : ''}>Antidiabetic</option>
+                                <option value="Antidepressant" ${medicine.category === 'Antidepressant' ? 'selected' : ''}>Antidepressant</option>
+                                <option value="Antiviral" ${medicine.category === 'Antiviral' ? 'selected' : ''}>Antiviral</option>
+                                <option value="Antifungal" ${medicine.category === 'Antifungal' ? 'selected' : ''}>Antifungal</option>
+                                <option value="Gastrointestinal" ${medicine.category === 'Gastrointestinal' ? 'selected' : ''}>Gastrointestinal</option>
+                                <option value="Cardiovascular" ${medicine.category === 'Cardiovascular' ? 'selected' : ''}>Cardiovascular</option>
+                                <option value="Respiratory" ${medicine.category === 'Respiratory' ? 'selected' : ''}>Respiratory</option>
+                                <option value="Vitamin" ${medicine.category === 'Vitamin' ? 'selected' : ''}>Vitamin & Supplement</option>
+                                <option value="Other" ${medicine.category === 'Other' ? 'selected' : ''}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Manufacturer *</label>
+                            <input type="text" class="form-control" id="editMedicineManufacturer" value="${medicine.manufacturer}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Price (₹) *</label>
+                            <input type="number" class="form-control" id="editMedicinePrice" step="0.01" min="0" value="${medicine.price}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Current Stock *</label>
+                            <input type="number" class="form-control" id="editMedicineStock" min="0" value="${medicine.stock}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Minimum Stock Level *</label>
+                            <input type="number" class="form-control" id="editMedicineMinStock" min="1" value="${medicine.minStock}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Expiry Date *</label>
+                            <input type="date" class="form-control" id="editMedicineExpiry" value="${medicine.expiry}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Batch Number</label>
+                            <input type="text" class="form-control" id="editMedicineBatch" value="${medicine.batch || ''}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="editMedicineDescription" rows="3">${medicine.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="updateMedicineBtn" data-id="${medicine.id}">Update Medicine</button>
+                    </div>
+                </form>
+            `;
+            
+            // Show modal
+            const editModal = new bootstrap.Modal(document.getElementById('editMedicineModal'));
+            editModal.show();
+            
+            // Add event listener
+            document.getElementById('updateMedicineBtn').addEventListener('click', function() {
+                updateMedicine(id);
+            });
+        }
+
+        // Function to update medicine
+        function updateMedicine(id) {
+            const medicineIndex = medicines.findIndex(m => m.id === id);
+            if (medicineIndex === -1) return;
+            
+            // Get updated values
+            medicines[medicineIndex].name = document.getElementById('editMedicineName').value;
+            medicines[medicineIndex].category = document.getElementById('editMedicineCategory').value;
+            medicines[medicineIndex].manufacturer = document.getElementById('editMedicineManufacturer').value;
+            medicines[medicineIndex].price = parseFloat(document.getElementById('editMedicinePrice').value);
+            medicines[medicineIndex].stock = parseInt(document.getElementById('editMedicineStock').value);
+            medicines[medicineIndex].minStock = parseInt(document.getElementById('editMedicineMinStock').value);
+            medicines[medicineIndex].expiry = document.getElementById('editMedicineExpiry').value;
+            medicines[medicineIndex].batch = document.getElementById('editMedicineBatch').value;
+            medicines[medicineIndex].description = document.getElementById('editMedicineDescription').value;
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('editMedicineModal')).hide();
+            
+            // Update UI
+            renderMedicineTable();
+            updateDashboard();
+            
+            // Save to storage
+            saveDataToStorage();
+            
+            // Show success message
+            showAlert('Medicine updated successfully!', 'success');
+        }
+
+        // Function to filter medicines
+        function filterMedicines() {
+            const searchTerm = document.getElementById('searchMedicine').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            let filtered = medicines;
+            
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(medicine => 
+                    medicine.name.toLowerCase().includes(searchTerm) ||
+                    medicine.category.toLowerCase().includes(searchTerm) ||
+                    medicine.manufacturer.toLowerCase().includes(searchTerm) ||
+                    (medicine.description && medicine.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            // Apply status filter
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(medicine => {
+                    const status = getMedicineStatus(medicine);
+                    return (statusFilter === 'available' && status === 'Available') ||
+                           (statusFilter === 'low' && status === 'Low Stock') ||
+                           (statusFilter === 'out' && status === 'Out of Stock');
+                });
+            }
+            
+            renderMedicineTable(filtered);
+        }
+
+        // Function to show sale modal
+        function showSaleModal() {
+            const saleModal = new bootstrap.Modal(document.getElementById('saleMedicineModal'));
+            saleModal.show();
+            
+            // Reset current sale items
+            currentSaleItems = [];
+            updateCurrentSaleDisplay();
+            updateSaleTotal();
+            
+            // Update receipt date and time
+            const now = new Date();
+            document.getElementById('receiptDateTime').textContent = 
+                now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+            document.getElementById('receiptDate').textContent = now.toLocaleDateString();
+            
+            // Load sale medicine list
+            loadSaleMedicineList();
+        }
+
+        // Function to load sale medicine list
+        function loadSaleMedicineList() {
+            const saleList = document.getElementById('saleMedicineList');
+            let html = '';
+            
+            medicines.forEach(medicine => {
+                const status = getMedicineStatus(medicine);
+                if (status !== 'Out of Stock') {
+                    html += `
+                        <tr class="sale-item-row">
+                            <td><strong>${medicine.name}</strong><br><small class="text-muted">${medicine.manufacturer}</small></td>
+                            <td>${medicine.stock}</td>
+                            <td>₹${medicine.price.toFixed(2)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-success add-to-sale-btn" data-id="${medicine.id}">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            saleList.innerHTML = html;
+            
+            // Add event listeners to add buttons
+            document.querySelectorAll('.add-to-sale-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    addMedicineToSale(id);
+                });
+            });
+        }
+
+        // Function to filter sale medicines
+        function filterSaleMedicines() {
+            const searchTerm = document.getElementById('saleSearchMedicine').value.toLowerCase();
+            const saleList = document.getElementById('saleMedicineList');
+            const rows = saleList.getElementsByTagName('tr');
+            
+            for (let row of rows) {
+                const medicineName = row.cells[0].textContent.toLowerCase();
+                row.style.display = medicineName.includes(searchTerm) ? '' : 'none';
+            }
+        }
+
+        // Function to add medicine to sale
+        function addMedicineToSale(medicineId) {
+            const medicine = medicines.find(m => m.id === medicineId);
+            if (!medicine) return;
+            
+            // Check if medicine already in sale items
+            const existingItem = currentSaleItems.find(item => item.id === medicineId);
+            
+            if (existingItem) {
+                // Ask for quantity
+                const quantity = prompt(`Enter quantity for ${medicine.name} (Available: ${medicine.stock}):`, "1");
+                if (quantity && !isNaN(quantity) && quantity > 0) {
+                    const qty = parseInt(quantity);
+                    if (qty <= medicine.stock) {
+                        existingItem.quantity += qty;
+                        existingItem.total = existingItem.quantity * existingItem.price;
+                    } else {
+                        showAlert(`Only ${medicine.stock} items available!`, 'warning');
+                    }
+                }
+            } else {
+                // Ask for quantity
+                const quantity = prompt(`Enter quantity for ${medicine.name} (Available: ${medicine.stock}):`, "1");
+                if (quantity && !isNaN(quantity) && quantity > 0) {
+                    const qty = parseInt(quantity);
+                    if (qty <= medicine.stock) {
+                        currentSaleItems.push({
+                            id: medicine.id,
+                            name: medicine.name,
+                            price: medicine.price,
+                            quantity: qty,
+                            total: medicine.price * qty
+                        });
+                    } else {
+                        showAlert(`Only ${medicine.stock} items available!`, 'warning');
+                    }
+                }
+            }
+            
+            updateCurrentSaleDisplay();
+            updateSaleTotal();
+            updateReceiptPreview();
+        }
+
+        // Function to update current sale display
+        function updateCurrentSaleDisplay() {
+            const saleItemsTable = document.getElementById('currentSaleItems');
+            
+            if (currentSaleItems.length === 0) {
+                saleItemsTable.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                            <p>No items added to sale yet</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('totalSaleItems').textContent = '0';
+                return;
+            }
+            
+            let html = '';
+            let totalItems = 0;
+            
+            currentSaleItems.forEach((item, index) => {
+                totalItems += item.quantity;
+                html += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>
+                            <div class="input-group input-group-sm">
+                                <button class="btn btn-outline-secondary" onclick="updateSaleQuantity(${index}, -1)">-</button>
+                                <input type="number" class="form-control text-center" value="${item.quantity}" min="1" 
+                                       onchange="updateSaleQuantityInput(${index}, this.value)" style="width: 60px;">
+                                <button class="btn btn-outline-secondary" onclick="updateSaleQuantity(${index}, 1)">+</button>
+                            </div>
+                        </td>
+                        <td>₹${item.price.toFixed(2)}</td>
+                        <td>₹${item.total.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeSaleItem(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            saleItemsTable.innerHTML = html;
+            document.getElementById('totalSaleItems').textContent = totalItems;
+        }
+
+        // Function to update sale quantity (global function for button onclick)
+        function updateSaleQuantity(index, change) {
+            const item = currentSaleItems[index];
+            const medicine = medicines.find(m => m.id === item.id);
+            
+            if (!medicine) return;
+            
+            const newQuantity = item.quantity + change;
+            
+            if (newQuantity < 1) {
+                removeSaleItem(index);
+                return;
+            }
+            
+            if (newQuantity > medicine.stock) {
+                showAlert(`Only ${medicine.stock} items available!`, 'warning');
+                return;
+            }
+            
+            item.quantity = newQuantity;
+            item.total = item.price * newQuantity;
+            
+            updateCurrentSaleDisplay();
+            updateSaleTotal();
+            updateReceiptPreview();
+        }
+
+        // Function to update sale quantity from input (global function)
+        function updateSaleQuantityInput(index, value) {
+            const item = currentSaleItems[index];
+            const medicine = medicines.find(m => m.id === item.id);
+            
+            if (!medicine) return;
+            
+            const newQuantity = parseInt(value);
+            
+            if (isNaN(newQuantity) || newQuantity < 1) {
+                item.quantity = 1;
+            } else if (newQuantity > medicine.stock) {
+                showAlert(`Only ${medicine.stock} items available!`, 'warning');
+                item.quantity = medicine.stock;
+            } else {
+                item.quantity = newQuantity;
+            }
+            
+            item.total = item.price * item.quantity;
+            
+            updateCurrentSaleDisplay();
+            updateSaleTotal();
+            updateReceiptPreview();
+        }
+
+        // Function to remove sale item (global function)
+        function removeSaleItem(index) {
+            currentSaleItems.splice(index, 1);
+            updateCurrentSaleDisplay();
+            updateSaleTotal();
+            updateReceiptPreview();
+        }
+
+        // Function to update sale total
+        function updateSaleTotal() {
+            const subtotal = currentSaleItems.reduce((sum, item) => sum + item.total, 0);
+            const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+            const grandTotal = subtotal - discount;
+            
+            document.getElementById('saleSubtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('saleGrandTotal').textContent = grandTotal.toFixed(2);
+            
+            // Update receipt preview
+            document.getElementById('receiptSubtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('receiptDiscount').textContent = discount.toFixed(2);
+            document.getElementById('receiptGrandTotal').textContent = grandTotal.toFixed(2);
+        }
+
+        // Function to update receipt preview
+        function updateReceiptPreview() {
+            const receiptItems = document.getElementById('receiptItems');
+            
+            if (currentSaleItems.length === 0) {
+                receiptItems.innerHTML = '<p class="text-muted text-center">No items</p>';
+                return;
+            }
+            
+            let html = '';
+            currentSaleItems.forEach(item => {
+                html += `
+                    <div class="receipt-item">
+                        <div>
+                            <div>${item.name}</div>
+                            <small>${item.quantity} × PKR${item.price.toFixed(2)}</small>
+                        </div>
+                        <div>PKR${item.total.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            
+            receiptItems.innerHTML = html;
+        }
+
+        // Function to complete sale
+        function completeSale() {
+            if (currentSaleItems.length === 0) {
+                showAlert('Please add items to the sale first!', 'warning');
+                return;
+            }
+            
+            const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+            const subtotal = currentSaleItems.reduce((sum, item) => sum + item.total, 0);
+            const grandTotal = subtotal - discount;
+            
+            // Validate stock availability
+            for (const saleItem of currentSaleItems) {
+                const medicine = medicines.find(m => m.id === saleItem.id);
+                if (!medicine || medicine.stock < saleItem.quantity) {
+                    showAlert(`Insufficient stock for ${saleItem.name}! Available: ${medicine ? medicine.stock : 0}`, 'danger');
+                    return;
+                }
+            }
+            
+            // Update medicine stock
+            for (const saleItem of currentSaleItems) {
+                const medicineIndex = medicines.findIndex(m => m.id === saleItem.id);
+                if (medicineIndex !== -1) {
+                    medicines[medicineIndex].stock -= saleItem.quantity;
+                }
+            }
+            
+            // Create sale record
+            const saleRecord = {
+                receiptNumber: saleReceiptNumber,
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString(),
+                items: [...currentSaleItems],
+                subtotal: subtotal,
+                discount: discount,
+                totalAmount: grandTotal
+            };
+            
+            // Add to sales array
+            sales.push(saleRecord);
+            
+            // Increment receipt number for next sale
+            saleReceiptNumber++;
+            
+            // Save data
+            saveDataToStorage();
+            
+            // Update UI
+            renderMedicineTable();
+            updateDashboard();
+            updateReceiptNumber();
+            
+            // Print receipt
+            window.print();
+            
+            // Close modal after delay
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('saleMedicineModal')).hide();
+                showAlert('Sale completed successfully! Receipt printed.', 'success');
+                
+                // Reset sale
+                currentSaleItems = [];
+            }, 1000);
+        }
+
+        // Function to check missing medicines
+        function checkMissingMedicines() {
+            const missing = medicines.filter(medicine => 
+                medicine.stock === 0 || medicine.stock <= medicine.minStock
+            );
+            
+            if (missing.length === 0) {
+                showAlert('All medicines are sufficiently stocked!', 'success');
+                return;
+            }
+            
+            let alertText = 'Low/Out of Stock Medicines:\n\n';
+            missing.forEach(medicine => {
+                const status = getMedicineStatus(medicine);
+                alertText += `${medicine.name} - ${status} (${medicine.stock}/${medicine.minStock})\n`;
+            });
+            
+            alert(alertText);
+        }
+
+        // Function to export data
+        function exportData() {
+            // Create CSV content
+            let csvContent = "ID,Name,Category,Manufacturer,Stock,Min Stock,Price,Expiry Date,Status\n";
+            
+            medicines.forEach(medicine => {
+                const status = getMedicineStatus(medicine);
+                csvContent += `${medicine.id},"${medicine.name}","${medicine.category}","${medicine.manufacturer}",${medicine.stock},${medicine.minStock},${medicine.price},"${medicine.expiry}","${status}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hospital_medicines_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showAlert('Data exported successfully!', 'success');
+        }
+
+        // Function to backup data
+        function backupData() {
+            const backupData = {
+                timestamp: new Date().toISOString(),
+                version: '1.0',
+                medicines: medicines,
+                sales: sales
+            };
+            
+            // Create JSON string
+            const jsonData = JSON.stringify(backupData, null, 2);
+            
+            // Create download link
+            const blob = new Blob([jsonData], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hospital_medicines_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            showAlert('Backup created successfully!', 'success');
+        }
+
+        // Function to show alert
+        function showAlert(message, type) {
+            // Remove any existing alerts
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) existingAlert.remove();
+            
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Add to page
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // Auto-save on beforeunload (when closing tab/browser)
+        window.addEventListener('beforeunload', function() {
+            saveDataToStorage();
+        });
+
+        // Auto-save periodically (every 30 seconds)
+        setInterval(() => {
+            if (medicines.length > 0) {
+                saveDataToStorage();
+            }
+        }, 30000);
+
+        // Listen for changes in browser storage (for multiple tabs/windows)
+        window.addEventListener('storage', function(event) {
+            if (event.key === STORAGE_KEY) {
+                showDataStatus('Data updated from another tab', 'saving');
+                setTimeout(() => {
+                    loadDataFromStorage();
+                    renderMedicineTable();
+                    updateDashboard();
+                    showDataStatus('Data synced from other tab', 'saved');
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
